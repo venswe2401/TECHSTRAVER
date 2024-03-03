@@ -1,0 +1,65 @@
+#include <ESP8266WiFi.h>
+#include <ESP8266HTTPClient.h>
+
+const char* ssid = "your_wifi_ssid";
+const char* password = "your_wifi_password";
+const char* server_url = "your_cloud_server_url";
+
+const int infraredSensorPin = 2;  // Replace with your actual pin numbers
+const int motorControlPin = 3;
+
+bool isParkingOccupied = false;
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(infraredSensorPin, INPUT);
+  pinMode(motorControlPin, OUTPUT);
+
+  // Connect to WiFi
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Connecting to WiFi...");
+  }
+  Serial.println("Connected to WiFi");
+}
+
+void loop() {
+  // Check if parking is occupied
+  isParkingOccupied = digitalRead(infraredSensorPin) == HIGH;
+
+  // Update the cloud server with parking data
+  updateCloudServer(isParkingOccupied);
+
+  // Control the gate based on parking occupancy
+  controlGate(isParkingOccupied);
+
+  delay(5000);  // Update every 5 seconds (adjust as needed)
+}
+
+void updateCloudServer(bool isOccupied) {
+  HTTPClient http;
+
+  http.begin(server_url);
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+
+  String postData = "parking_status=" + String(isOccupied ? 1 : 0);
+  int httpResponseCode = http.POST(postData);
+
+  if (httpResponseCode > 0) {
+    Serial.print("Server response code: ");
+    Serial.println(httpResponseCode);
+  } else {
+    Serial.println("Error updating server");
+  }
+
+  http.end();
+}
+
+void controlGate(bool isOccupied) {
+  if (isOccupied) {
+    digitalWrite(motorControlPin, HIGH);  // Activate the motor to close the gate
+  } else {
+    digitalWrite(motorControlPin, LOW);  // Deactivate the motor to open the gate
+  }
+}
