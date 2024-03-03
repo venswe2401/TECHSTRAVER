@@ -1,0 +1,52 @@
+pip install homeassistant
+from homeassistant.const import STATE_ON, STATE_OFF
+from homeassistant.helpers.entity import Entity
+import homeassistant.helpers.config_validation as cv
+from datetime import timedelta
+import voluptuous as vol
+
+DOMAIN = "smart_home"
+SCAN_INTERVAL = timedelta(seconds=10)
+
+# Example light entity
+LIGHT_ENTITY_ID = "light.living_room"
+MOTION_SENSOR_ENTITY_ID = "binary_sensor.motion_sensor"
+THERMOSTAT_ENTITY_ID = "climate.thermostat"
+DOOR_SENSOR_ENTITY_ID = "binary_sensor.door_sensor"
+
+def setup(hass, config):
+    hass.states.set(LIGHT_ENTITY_ID, STATE_OFF)
+    hass.states.set(MOTION_SENSOR_ENTITY_ID, STATE_OFF)
+    hass.states.set(THERMOSTAT_ENTITY_ID, 22.0)
+    hass.states.set(DOOR_SENSOR_ENTITY_ID, STATE_OFF)
+
+    # Example automation
+    def motion_detected(call):
+        hass.states.set(LIGHT_ENTITY_ID, STATE_ON)
+        hass.states.set(MOTION_SENSOR_ENTITY_ID, STATE_ON)
+
+    hass.services.register(DOMAIN, "motion_detected", motion_detected)
+
+    return True
+
+# Example service to turn off the lights
+SERVICE_TURN_OFF_LIGHTS = "turn_off_lights"
+SCHEMA_TURN_OFF_LIGHTS = {}
+
+def turn_off_lights_service(call):
+    hass.states.set(LIGHT_ENTITY_ID, STATE_OFF)
+    hass.states.set(MOTION_SENSOR_ENTITY_ID, STATE_OFF)
+
+hass.services.register(DOMAIN, SERVICE_TURN_OFF_LIGHTS, turn_off_lights_service, schema=SCHEMA_TURN_OFF_LIGHTS)
+
+# Example service to adjust thermostat
+SERVICE_SET_TEMPERATURE = "set_temperature"
+SCHEMA_SET_TEMPERATURE = {
+    vol.Required("temperature"): cv.positive_float,
+}
+
+def set_temperature_service(call):
+    temperature = call.data["temperature"]
+    hass.states.set(THERMOSTAT_ENTITY_ID, temperature)
+
+hass.services.register(DOMAIN, SERVICE_SET_TEMPERATURE, set_temperature_service, schema=SCHEMA_SET_TEMPERATURE)
