@@ -1,0 +1,56 @@
+#include <ESP8266WiFi.h>
+#include <BlynkSimpleEsp8266.h>
+
+// Define your Wi-Fi credentials
+char auth[] = "your_blynk_auth_token";
+char ssid[] = "your_wifi_ssid";
+char pass[] = "your_wifi_password";
+
+// Define pin numbers for sensors and actuators
+const int motionSensorPin = D2;  // Replace with your actual pin
+const int lockControlPin = D3;   // Replace with your actual pin
+
+int doorStatus = 0;  // 0: Locked, 1: Unlocked
+
+void setup()
+{
+  Serial.begin(115200);
+  Blynk.begin(auth, ssid, pass);
+
+  // Set pinMode for sensors and actuators
+  pinMode(motionSensorPin, INPUT);
+  pinMode(lockControlPin, OUTPUT);
+
+  // Initially lock the door
+  lockDoor();
+}
+
+void loop()
+{
+  Blynk.run();
+
+  // Check for motion
+  int motionDetected = digitalRead(motionSensorPin);
+
+  // If motion is detected, unlock the door
+  if (motionDetected == HIGH && doorStatus == 0)
+  {
+    unlockDoor();
+    delay(5000);  // Lock the door after 5 seconds (adjust as needed)
+    lockDoor();
+  }
+}
+
+void unlockDoor()
+{
+  digitalWrite(lockControlPin, HIGH);
+  doorStatus = 1;
+  Serial.println("Door Unlocked");
+}
+
+void lockDoor()
+{
+  digitalWrite(lockControlPin, LOW);
+  doorStatus = 0;
+  Serial.println("Door Locked");
+}
